@@ -1,10 +1,17 @@
 package com.kietnguyen.karaokemanagement.controller;
 
+import com.kietnguyen.karaokemanagement.response.Response;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import javax.servlet.ServletContext;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,15 +33,22 @@ public class RoomController {
 	@Autowired
 	private RoomService roomService;
 	
+	@Autowired
+	ServletContext context;
+	
 	@RequestMapping(method = RequestMethod.GET)
 	public List<Room> findAll() {
 		return roomRepository.findAll();
-//		return roomService.query();
 	}
 	
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
-	public Room findById(@PathVariable Integer id) {
-		return roomRepository.findRoomById(id);
+	public ResponseEntity<Response> findById(@PathVariable Integer id) {
+		Room room = roomRepository.findRoomById(id);
+		
+		if (room == null)
+			return ResponseEntity.badRequest().body(new Response(400, false, "Resource is not existed"));
+		
+		return ResponseEntity.ok().body(new Response(200, true, room)); 
 	}
 	
 	@RequestMapping(value = "/{id}", method = RequestMethod.PUT)
@@ -48,20 +62,20 @@ public class RoomController {
 	}
 	
 	@RequestMapping(value = "/checkIn/{id}", method = RequestMethod.GET)
-	public ResponseEntity<String> checkIn(@PathVariable Integer id) {
+	public ResponseEntity<Response> checkIn(@PathVariable Integer id) {
 		Room room = roomRepository.findRoomById(id);
 		if (room == null)
-			return ResponseEntity.badRequest().body("Resource is not existed");
+			return ResponseEntity.badRequest().body(new Response(400, false, "Resource is not existed"));
 
 		if (room.getIsBooking()) {
-			return ResponseEntity.badRequest().body("This room is booking");
+			return ResponseEntity.badRequest().body(new Response(400, false, "This room is booking"));
 		}
 		
 		if (roomService.booking(room)) {
-			return ResponseEntity.ok().body("Booking successfully");
+			return ResponseEntity.ok().body(new Response(400, true, "Booking successfully"));
 		}
 		
-		return ResponseEntity.badRequest().body("Booking failed");
+		return ResponseEntity.badRequest().body(new Response(400, false, "Booking failed"));
 	}
 	
 	@RequestMapping(value = "/viewDetail/{id}", method = RequestMethod.GET)
@@ -76,41 +90,29 @@ public class RoomController {
 		return null;
 	}
 	
-	/*
-	 * @RequestMapping(value = "/checkOut/{id}", method = RequestMethod.GET) public
-	 * ResponseEntity<String> checkOut(@PathVariable Integer id) { Room room =
-	 * roomRepository.findRoomById(id); if (room == null) return
-	 * ResponseEntity.badRequest().body("Resource is not existed");
-	 * 
-	 * if (!room.getIsBooking()) { return
-	 * ResponseEntity.badRequest().body("This room is not booking"); }
-	 * 
-	 * if (roomService.pay(room)) { return
-	 * ResponseEntity.ok().body("Pay successfully"); }
-	 * 
-	 * return ResponseEntity.badRequest().body("Pay failed"); }
-	 */
-	
 	@RequestMapping(value = "/checkOut/{id}", method = RequestMethod.POST)
-	public Invoice checkOut(@RequestBody Invoice checkOutInfo, @PathVariable Integer id) {
+	public ResponseEntity<Response> checkOut(@RequestBody Invoice checkOutInfo, @PathVariable Integer id) {
 		Room room = roomRepository.findRoomById(id);
 		Integer surcharge = checkOutInfo.getSurcharge() > 0 ? checkOutInfo.getSurcharge() : 0;
 		
+		Path path = Paths.get(context.getRealPath("/"));
+		
+		System.out.println(path);
+		
 		if (room == null)
-			return null;
+			return ResponseEntity.badRequest().body(new Response(400, false, "Resource is not existed"));
 
-		if (!room.getIsBooking()) {
-			return null;
-		}
+		if (!room.getIsBooking()) 
+			return ResponseEntity.badRequest().body(new Response(400, false, "This room is not booking"));
 		
 		System.out.println("Integer surcharge " +surcharge);
 		
 		Invoice invoice = roomService.pay(room, surcharge);
 		
 		if (invoice != null) {
-			return invoice;
+			return ResponseEntity.ok().body(new Response(200, true, "Pay successfully"));
 		}
 		
-		return null;
+		return ResponseEntity.badRequest().body(new Response(400, false, "Pay failed"));
 	}
 }

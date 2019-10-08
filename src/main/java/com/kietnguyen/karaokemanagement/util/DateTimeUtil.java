@@ -1,5 +1,8 @@
 package com.kietnguyen.karaokemanagement.util;
 
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -37,11 +40,23 @@ public class DateTimeUtil {
 		  .toInstant());
 	}
 	
+	public LocalDate Date2LocalDate(Date date) {
+		Instant instant = date.toInstant();
+		return instant.atZone(ZoneId.systemDefault())
+				  .toLocalDate();
+	}
+	
 	public double getHoursBetween2Days(Date d1, Date d2) {
 		long milliseconds = this.getMilliSecondsBetween2Days(d1, d2);
 		int seconds = this.getSecond(milliseconds);
 		
 		return this.getHour(seconds);	
+	}
+	
+	public String getCurrentDayAsString() {
+		Date date = new Date();
+		
+		return new SimpleDateFormat("yyyy-MM-dd").format(date);
 	}
 	 
 }

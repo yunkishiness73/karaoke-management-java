@@ -1,49 +1,39 @@
 package com.kietnguyen.karaokemanagement.service;
 
-import static com.kietnguyen.karaokemanagement.service.specification.DetailInvoiceSpecifications.hasInvoice;
-import static com.kietnguyen.karaokemanagement.service.specification.DetailInvoiceSpecifications.hasItem;
+import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.equalTo;
+import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.hasTotalPrice;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import java.awt.GraphicsEnvironment;
 
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.io.font.FontConstants;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
-import com.itextpdf.kernel.pdf.PdfDocument; 
-import com.itextpdf.kernel.pdf.PdfWriter; 
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
 //import com.itextpdf.text.*;
 import com.itextpdf.layout.Document;
 //import com.itextpdf.text.Font.FontFamily;
 import com.itextpdf.layout.border.Border;
-import com.itextpdf.layout.border.DashedBorder;
-import com.itextpdf.layout.border.SolidBorder;
 import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.element.Text;
 import com.itextpdf.layout.property.TextAlignment;
-import com.itextpdf.text.pdf.BaseFont;
 import com.kietnguyen.karaokemanagement.model.DetailInvoice;
 import com.kietnguyen.karaokemanagement.model.Invoice;
+import com.kietnguyen.karaokemanagement.model.Revenue;
 import com.kietnguyen.karaokemanagement.repository.InvoiceRepository;
 import com.kietnguyen.karaokemanagement.util.DateTimeUtil;
-
-import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.hasTotalPrice;
-
-
 
 @Service
 public class InvoiceService {
@@ -51,6 +41,14 @@ public class InvoiceService {
 	private InvoiceRepository invoiceRepository;
 	
 	public static final String FONT = "src/main/resources/fonts/DejaVuSerif.ttf";
+	public static final String DAY = "day";
+	public static final String MONTH = "month";
+	public static final String YEAR = "year";
+	
+	
+	public List<Invoice> search(String datepicker) {
+		return invoiceRepository.findAll(equalTo(datepicker));
+	}
 	
 	public List<Invoice> query(Integer totalPrice) {
 		return invoiceRepository.findAll(hasTotalPrice(totalPrice));
@@ -69,18 +67,34 @@ public class InvoiceService {
 		return serviceCharge;
 	}
 	
-	public void printBill(Invoice invoice) {
-//		Document document = new Document();
-		
+	public String formatNumber(Locale locale, Integer number) {
+		 NumberFormat numberFormat = NumberFormat.getInstance(locale);
+		 
+		 return numberFormat.format(number);
+	}
+	
+	public List<Revenue> getRevenue(String from, String to, String viewType) {
+		switch (viewType) {
+			case DAY:
+				return invoiceRepository.getRevenueByDay(from, to);
+			case MONTH:
+				return invoiceRepository.getRevenueByMonth(from, to);
+			case YEAR:	
+				return invoiceRepository.getRevenueByYear(from, to);
+			default:
+				return null;
+		}
+	}
+	
+	public void printBill(Invoice invoice, Integer charge) {
 		try {
-			PdfDocument pdfDoc = new PdfDocument(new PdfWriter("E:\\Programing\\Web Co Ban & Nang Cao\\Java\\eclipse-workspace\\karaokemanagement\\src\\main\\java\\com\\kietnguyen\\karaokemanagement\\itext.pdf"));
+			String invoice_pdf = "src/main/resources/public/bills/Bill_";
+			invoice_pdf +=  invoice.getRoom().getName() + "_" + invoice.getId() + ".pdf";
+			PdfDocument pdfDoc = new PdfDocument(new PdfWriter(invoice_pdf));
 			 pdfDoc.setDefaultPageSize(PageSize.A5);
 			Document document = new Document(pdfDoc);
 		
-//			PdfWriter.getInstance(document, new FileOutputStream(new File("E:\\Programing\\Web Co Ban & Nang Cao\\Java\\eclipse-workspace\\karaokemanagement\\src\\main\\java\\com\\kietnguyen\\karaokemanagement\\itext.pdf")));
-		
 			PdfFont baseFont = PdfFontFactory.createFont(FONT, PdfEncodings.IDENTITY_H, true);
-//			BaseFont baseFont = BaseFont.createFont("fonts/ttf/dejavu/DejaVuSans.ttf", "cp1251", BaseFont.EMBEDDED);
 	 
 			
 			Paragraph p = new Paragraph();
@@ -142,14 +156,6 @@ public class InvoiceService {
 	        c7.setBorder(Border.NO_BORDER);             
 	        table.addCell(c7); 
 	        
-//	        Cell c8 = new Cell();
-////	        c7.add(new SimpleDateFormat("HH:mm").format(DateTimeUtil.getInstance().LocalDateTime2Date(invoice.getCheckIn())));
-////	        c7.setFont(baseFont);
-////	        c7.setFontSize(12);
-//	        c7.setBorder(Border.NO_BORDER);             
-////	        c7.setTextAlignment(TextAlignment.LEFT);   
-//	        table.addCell(c8); 
-	        
 	        Cell c9 = new Cell();
 	        c9.add("Giờ ra: ");
 	        c9.setFont(baseFont);
@@ -197,13 +203,16 @@ public class InvoiceService {
 	        c15.setBorder(Border.NO_BORDER);             
 	        table.addCell(c15); 
 	        
-	        Cell c16 = new Cell();
+	        float [] pointColumnWidths2 = {200F, 200F, 200F, 200F, 200F};
+	        Table table2 = new Table(pointColumnWidths2);
+	        
+	        Cell c16 = new Cell(1,2);
 	        c16.add("Tên");
 	        c16.setFont(baseFont);
 	        c16.setFontSize(12);
 	        c16.setBorder(Border.NO_BORDER);             
 	        c16.setTextAlignment(TextAlignment.CENTER);   
-	        table.addCell(c16);
+	        table2.addCell(c16);
 	        
 	        Cell c17 = new Cell();
 	        c17.add("Số lượng");
@@ -211,7 +220,7 @@ public class InvoiceService {
 	        c17.setFontSize(12);
 	        c17.setBorder(Border.NO_BORDER);             
 	        c17.setTextAlignment(TextAlignment.CENTER);   
-	        table.addCell(c17);
+	        table2.addCell(c17);
 	        
 	        Cell c18 = new Cell();
 	        c18.add("Giá");
@@ -219,7 +228,7 @@ public class InvoiceService {
 	        c18.setFontSize(12);
 	        c18.setBorder(Border.NO_BORDER);             
 	        c18.setTextAlignment(TextAlignment.CENTER);   
-	        table.addCell(c18);
+	        table2.addCell(c18);
 	        
 	        Cell c19 = new Cell();
 	        c19.add("Tổng");
@@ -227,55 +236,177 @@ public class InvoiceService {
 	        c19.setFontSize(12);
 	        c19.setBorder(Border.NO_BORDER);             
 	        c19.setTextAlignment(TextAlignment.CENTER);   
-	        table.addCell(c19);
+	        table2.addCell(c19);
 	        
-	        Cell c20 = new Cell(1,4);
+	        Cell c20 = new Cell(1,5);
 	        c20.add("-------------------------------------------------------------------------------------");
-	        c20.setHeight(35);
+	        c20.setHeight(20);
 	        c20.setBorder(Border.NO_BORDER);             
-	        table.addCell(c20);
+	        table2.addCell(c20);
 	        
 	        //Generate cells for item list
 	        ArrayList<DetailInvoice> detailInvoices = new ArrayList<>(invoice.getDetailInvoices());
+	        Integer serviceCharge = 0;
 	        for (int i = 0; i < detailInvoices.size(); i++) {
 	        	DetailInvoice item = detailInvoices.get(i);
+	        	
+	        	serviceCharge += item.getPrice();
+	        	
 	        	Cell col1 = new Cell(1,2);
 	        	col1.add(item.getItem().getName());
 	        	col1.setFont(baseFont);
 	        	col1.setFontSize(12);
 	        	col1.setBorder(Border.NO_BORDER);             
 	        	col1.setTextAlignment(TextAlignment.LEFT);   
-		        table.addCell(col1);
+	        	table2.addCell(col1);
 		        
 		        Cell col2 = new Cell();
 		        col2.add(item.getQuantity() + "");
-		        col2.setFont(baseFont);
 		        col2.setFontSize(12);
 		        col2.setBorder(Border.NO_BORDER);             
 		        col2.setTextAlignment(TextAlignment.CENTER);   
-		        table.addCell(col2);
+		        table2.addCell(col2);
 		       
 		        Cell col3 = new Cell();
-		        col3.add(item.getItem().getPrice() + "");
-		        col3.setFont(baseFont);
+		        col3.add(this.formatNumber(Locale.getDefault(), item.getItem().getPrice()));
 		        col3.setFontSize(12);
 		        col3.setBorder(Border.NO_BORDER);             
 		        col3.setTextAlignment(TextAlignment.CENTER);   
-		        table.addCell(col3);
+		        table2.addCell(col3);
 		        
 		        Cell col4 = new Cell();
-		        col4.add(item.getPrice() + "");
-		        col4.setFont(baseFont);
+		        col4.add(this.formatNumber(Locale.getDefault(), item.getPrice()));
 		        col4.setFontSize(12);
 		        col4.setBorder(Border.NO_BORDER);             
 		        col4.setTextAlignment(TextAlignment.CENTER);   
-	        	table.addCell(col4);
+		        table2.addCell(col4);
 	        }
+	        
+	        Cell c21 = new Cell(1,5);
+	        c21.add("-------------------------------------------------------------------------------------");
+	        c21.setHeight(20);
+	        c21.setBorder(Border.NO_BORDER);             
+	        table2.addCell(c21);
+	        
+	        Table table3 = new Table(pointColumnWidths);
+	        
+	        Cell c24 = new Cell(1,2);
+	        c24.add("Dịch vụ: ");
+	        c24.setFont(baseFont);
+	        c24.setFontSize(12);
+	        c24.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c24);
+	        
+	        Cell c25 = new Cell(1,2);
+	        c25.setFont(baseFont);
+	        c25.add(this.formatNumber(Locale.getDefault(), serviceCharge) + " đồng");
+	        c25.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c25);
+	        
+	        Cell c22 = new Cell(1,2);
+	        c22.add("Phụ thu: ");
+	        c22.setFont(baseFont);
+	        c22.setFontSize(12);
+	        c22.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c22);
+	        
+	        Cell c23 = new Cell(1,2);
+	        c23.setFont(baseFont);
+	        c23.add(this.formatNumber(Locale.getDefault(), invoice.getSurcharge()) + " đồng");
+	        c23.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c23);
+	        
+	        Cell c28 = new Cell(1,2);
+	        c28.add("Tiền giờ: ");
+	        c28.setFont(baseFont);
+	        c28.setFontSize(12);
+	        c28.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c28);
+	        
+	        Cell c29 = new Cell(1,2);
+	        c29.setFont(baseFont);
+	        c29.add(this.formatNumber(Locale.getDefault(), invoice.getTotalPrice()-invoice.getSurcharge()-serviceCharge) + " đồng");
+	        c29.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c29);
+	        
+	        Cell c31 = new Cell(1,2);
+	        c31.add("Tổng hóa đơn: ");
+	        c31.setFont(baseFont);
+	        c31.setFontSize(16);
+	        c31.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c31);
+	        
+	        Cell c32 = new Cell(1,2);
+	        c32.setFontSize(16);
+	        c32.setFont(baseFont);
+	        c32.add(this.formatNumber(Locale.getDefault(), invoice.getTotalPrice()) + " đồng");
+	        c32.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c32);
+	        
+	        Cell c34 = new Cell(1,4);
+	        c34.add("-------------------------------------------------------------------------------------");
+	        c34.setHeight(20);
+	        c34.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c34);
+	        
+	        Cell c35 = new Cell(1,2);
+	        c35.add("Tiền khách đưa: ");
+	        c35.setFont(baseFont);
+	        c35.setFontSize(12);
+	        c35.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c35);
+	        
+	        Cell c36 = new Cell(1,2);
+	        c36.setFontSize(12);
+	        c36.setFont(baseFont);
+	        c36.add(this.formatNumber(Locale.getDefault(), charge) + " đồng");
+	        c36.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c36);
+	        
+	        Cell c38 = new Cell(1,2);
+	        c38.add("Tiền trả khách: ");
+	        c38.setFont(baseFont);
+	        c38.setFontSize(12);
+	        c38.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c38);
+	        
+	        Cell c39 = new Cell(1,2);
+	        c39.setFontSize(12);
+	        c39.setFont(baseFont);
+	        c39.add(this.formatNumber(Locale.getDefault(), charge - invoice.getTotalPrice()) + " đồng");
+	        c39.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c39);
+	        
+	        Cell c41 = new Cell(1,2);
+	        c41.add("* Tiền giờ: ");
+	        c41.setFont(baseFont);
+	        c41.setFontSize(12);
+	        c41.setHeight(40);
+	        c41.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c41);
+	        
+	        Cell c42 = new Cell(1,2);
+	        c42.setFontSize(12);
+	        c42.setFont(baseFont);
+	        c42.setHeight(40);
+	        c42.add(this.formatNumber(Locale.getDefault(), invoice.getRoom().getRoomType().getEvent().getBasePrice()) + " đồng/giờ");
+	        c42.setBorder(Border.NO_BORDER);             
+	        table3.addCell(c42);
 	
 	        
 	        document.add(table);
+	        document.add(table2);
+	        document.add(table3);
 	        
-	        document.close();  
+	        document.close();
+	        pdfDoc.close();
+	        
+	        //when we issue an invoice, we also update invoice's status is paid
+	        invoice.setInvoicePdf(invoice_pdf);
+	        invoice.setIsPaid(true);
+	        invoice.getRoom().setIsBooking(false);
+	        
+	        invoiceRepository.save(invoice);
 			
 		} catch(Exception e) {
 			e.printStackTrace();

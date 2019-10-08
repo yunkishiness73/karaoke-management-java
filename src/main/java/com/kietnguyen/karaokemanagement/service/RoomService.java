@@ -107,7 +107,7 @@ public class RoomService {
 			
 			invoiceRepository.save(invoice);
 			
-			invoiceService.printBill(invoice);
+//			invoiceService.printBill(invoice, 0);
 			
 			System.out.println("surcharge: " +surcharge);
 			System.out.println("Hours: "+ rounded_hours);
