@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -21,6 +23,7 @@ import com.kietnguyen.karaokemanagement.repository.InvoiceRepository;
 import com.kietnguyen.karaokemanagement.service.InvoiceService;
 import com.kietnguyen.karaokemanagement.util.DateTimeUtil;
 
+@CrossOrigin(origins = "http://localhost:3000", maxAge = 3600)
 @RestController
 @RequestMapping("/api/invoices")
 public class InvoiceController {
@@ -30,9 +33,12 @@ public class InvoiceController {
 	private InvoiceRepository invoiceRepository;
 	
 	@RequestMapping(method = RequestMethod.GET)
-	public List<Invoice> findAll(@RequestParam(value="datepicker") Optional<String> datepicker) {
+	public List<Invoice> findAll(@RequestParam(value="datepicker") Optional<String> datepicker, @RequestParam Optional<String> keyword) {
 		if (datepicker.isPresent())
 			return invoiceService.search(datepicker.get());
+		
+		if (keyword.isPresent()) 
+			return invoiceService.populateCriteriaSearch(keyword.get());
 		
 		return invoiceRepository.findAll(); 
 	}
@@ -56,18 +62,22 @@ public class InvoiceController {
 	}
 	
 	@RequestMapping(value = "/issueInvoice", method = RequestMethod.GET)
-	public Invoice issueInvoice(@RequestParam Integer invoiceId, @RequestParam Integer charge) {
+	public ResponseEntity<Response> issueInvoice(@RequestParam Integer invoiceId, @RequestParam Integer charge) {
 		Invoice invoice = invoiceRepository.findInvoiceById(invoiceId);
 		
-		if (invoice == null) return null;
+		if (invoice == null)
+			return ResponseEntity.badRequest().body(new Response(400, false, "Resource is not existed"));
 		
-		if (invoice.getInvoicePdf() != null) return null; 
+		if (invoice.getInvoicePdf() != null)
+			return ResponseEntity.badRequest().body(new Response(400, false, "Invoice is paid"));
 		
 		if (charge < invoice.getTotalPrice())
-			return null;
+			return ResponseEntity.badRequest().body(new Response(400, false, "Charge must greater than or equal to total price"));
 		
-		invoiceService.printBill(invoice, charge);
+		if (invoiceService.printBill(invoice, charge)) {
+			return ResponseEntity.ok().body(new Response(200, true, invoice));
+		}
 		
-		return invoice;
+		return ResponseEntity.badRequest().body(new Response(400, false, "Issue an invoice fail"));
 	}
 }

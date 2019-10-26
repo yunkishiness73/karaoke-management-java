@@ -7,6 +7,7 @@ import javax.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 import com.kietnguyen.karaokemanagement.model.Invoice;
 import com.kietnguyen.karaokemanagement.model.Room;
+import com.kietnguyen.karaokemanagement.model.RoomType;
 
 public class RoomSpecifications {
 	
@@ -21,4 +22,15 @@ public class RoomSpecifications {
 		};
 	}
 	
+	public static Specification<Room> hasRoomType(Integer typeId) {
+		return (root, query, cb) -> { 
+	        return cb.equal(root.get("roomType"), typeId);
+		};
+	}
+	
+	public static Specification<Room> hasStatus(Integer isBooking) {
+		return (root, query, cb) -> { 
+	        return cb.equal(root.get("isBooking"), isBooking);
+		};
+	}
 }

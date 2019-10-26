@@ -1,10 +1,11 @@
 package com.kietnguyen.karaokemanagement.service;
 
-import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.hasTotalPrice;
 import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.isPaid;
 import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.belongToRoom;
 import static com.kietnguyen.karaokemanagement.service.specification.PeriodSpecifications.lessThanOrEqualTo;
 import static com.kietnguyen.karaokemanagement.service.specification.PeriodSpecifications.greaterThan;
+import static com.kietnguyen.karaokemanagement.service.specification.RoomSpecifications.hasRoomType;
+import static com.kietnguyen.karaokemanagement.service.specification.RoomSpecifications.hasStatus;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -24,6 +25,7 @@ import org.springframework.data.jpa.domain.Specification;
 import com.kietnguyen.karaokemanagement.model.Invoice;
 import com.kietnguyen.karaokemanagement.model.Period;
 import com.kietnguyen.karaokemanagement.model.Room;
+import com.kietnguyen.karaokemanagement.model.RoomResponse;
 import com.kietnguyen.karaokemanagement.model.User;
 import com.kietnguyen.karaokemanagement.repository.InvoiceRepository;
 import com.kietnguyen.karaokemanagement.repository.PeriodRepository;
@@ -43,6 +45,19 @@ public class RoomService {
 	UserService userService;
 	@Autowired
 	InvoiceService invoiceService;
+	
+	public List<RoomResponse> search(String keyword) {
+		System.out.println(keyword);
+		return roomRepository.populateSearch(keyword);
+	}
+	
+	public List<Room> getRoomsByRoomType(Integer roomTypeId) {
+		return roomRepository.findAll(hasRoomType(roomTypeId));
+	} 
+	
+	public List<Room> filterByStatus(Integer isBooking) {
+		return roomRepository.findAll(hasStatus(isBooking));
+	} 
 	
 	public boolean booking(Room room) {
 		Invoice invoice = new Invoice();

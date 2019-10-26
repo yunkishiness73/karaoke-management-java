@@ -2,6 +2,7 @@ package com.kietnguyen.karaokemanagement.service;
 
 import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.equalTo;
 import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.hasTotalPrice;
+import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.like;
 
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -12,6 +13,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.itextpdf.io.font.PdfEncodings;
@@ -50,8 +52,9 @@ public class InvoiceService {
 		return invoiceRepository.findAll(equalTo(datepicker));
 	}
 	
-	public List<Invoice> query(Integer totalPrice) {
-		return invoiceRepository.findAll(hasTotalPrice(totalPrice));
+	public List<Invoice> populateCriteriaSearch(String keyword) {
+		System.out.println(keyword);
+		return invoiceRepository.findAll(like(keyword));
 	}
 	
 	public Integer getServiceCharge(Set<DetailInvoice> set) {
@@ -86,11 +89,12 @@ public class InvoiceService {
 		}
 	}
 	
-	public void printBill(Invoice invoice, Integer charge) {
+	public boolean printBill(Invoice invoice, Integer charge) {
 		try {
-			String invoice_pdf = "src/main/resources/public/bills/Bill_";
-			invoice_pdf +=  invoice.getRoom().getName() + "_" + invoice.getId() + ".pdf";
-			PdfDocument pdfDoc = new PdfDocument(new PdfWriter(invoice_pdf));
+			String base_path = "src/main/resources/public/";
+			String invoice_pdf =  "bills/Bill_" + invoice.getRoom().getName() + "_" + invoice.getId() + ".pdf";
+			base_path += invoice_pdf;
+			PdfDocument pdfDoc = new PdfDocument(new PdfWriter(base_path));
 			 pdfDoc.setDefaultPageSize(PageSize.A5);
 			Document document = new Document(pdfDoc);
 		
@@ -407,10 +411,12 @@ public class InvoiceService {
 	        invoice.getRoom().setIsBooking(false);
 	        
 	        invoiceRepository.save(invoice);
+	        
+	        return true;
 			
 		} catch(Exception e) {
 			e.printStackTrace();
+			return false;
 		}
-		
 	}
 }

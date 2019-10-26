@@ -18,7 +18,7 @@ import com.kietnguyen.karaokemanagement.repository.RoomTypeRepository;
 
 
 @RestController
-@RequestMapping("/api/roomtypes")
+@RequestMapping("/api/roomTypes")
 public class RoomTypeController {
 	@Autowired
 	private RoomTypeRepository roomTypeRepository;

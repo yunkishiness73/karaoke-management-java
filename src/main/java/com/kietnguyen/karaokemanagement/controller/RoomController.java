@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 import javax.servlet.ServletContext;
 
@@ -17,10 +18,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kietnguyen.karaokemanagement.model.Invoice;
 import com.kietnguyen.karaokemanagement.model.Room;
+import com.kietnguyen.karaokemanagement.model.RoomResponse;
 import com.kietnguyen.karaokemanagement.repository.RoomRepository;
 import com.kietnguyen.karaokemanagement.service.RoomService;
 
@@ -29,15 +32,17 @@ import com.kietnguyen.karaokemanagement.service.RoomService;
 public class RoomController {
 	@Autowired
 	private RoomRepository roomRepository;
-	
 	@Autowired
 	private RoomService roomService;
 	
-	@Autowired
-	ServletContext context;
-	
 	@RequestMapping(method = RequestMethod.GET)
-	public List<Room> findAll() {
+	public List<Room> findAll(@RequestParam Optional<String> keyword, @RequestParam Optional<Integer> roomTypeId, @RequestParam Optional<Integer> isBooking) {
+		if (roomTypeId.isPresent()) 
+			return roomService.getRoomsByRoomType(roomTypeId.get());
+		
+		if (isBooking.isPresent())
+			return roomService.filterByStatus(isBooking.get());
+		
 		return roomRepository.findAll();
 	}
 	
@@ -94,11 +99,7 @@ public class RoomController {
 	public ResponseEntity<Response> checkOut(@RequestBody Invoice checkOutInfo, @PathVariable Integer id) {
 		Room room = roomRepository.findRoomById(id);
 		Integer surcharge = checkOutInfo.getSurcharge() > 0 ? checkOutInfo.getSurcharge() : 0;
-		
-		Path path = Paths.get(context.getRealPath("/"));
-		
-		System.out.println(path);
-		
+
 		if (room == null)
 			return ResponseEntity.badRequest().body(new Response(400, false, "Resource is not existed"));
 
