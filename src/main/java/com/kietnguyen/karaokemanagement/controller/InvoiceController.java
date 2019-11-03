@@ -34,6 +34,10 @@ public class InvoiceController {
 	
 	@RequestMapping(method = RequestMethod.GET)
 	public List<Invoice> findAll(@RequestParam(value="datepicker") Optional<String> datepicker, @RequestParam Optional<String> keyword) {
+		
+		if (keyword.isPresent() && datepicker.isPresent()) 
+			return invoiceService.populateOptionsSearch(keyword.get(), datepicker.get());
+		
 		if (datepicker.isPresent())
 			return invoiceService.search(datepicker.get());
 		

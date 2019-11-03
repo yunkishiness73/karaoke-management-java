@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,8 +18,10 @@ import com.kietnguyen.karaokemanagement.model.Item;
 import com.kietnguyen.karaokemanagement.model.Room;
 import com.kietnguyen.karaokemanagement.repository.ItemRepository;
 import com.kietnguyen.karaokemanagement.repository.RoomRepository;
+import com.kietnguyen.karaokemanagement.response.Response;
 import com.kietnguyen.karaokemanagement.service.ItemService;
 
+@CrossOrigin(origins = "http://localhost:3000", maxAge = 3600)
 @RestController
 @RequestMapping("/api/items")
 public class ItemController {
@@ -36,8 +40,14 @@ public class ItemController {
 	}
 	
 	@RequestMapping(method = RequestMethod.POST)
-	public Item insert(@RequestBody Item item) {
-		return itemRepository.save(item);
+	public ResponseEntity<Response> insert(@RequestBody Item item) {
+		try {
+			itemRepository.save(item);
+		} catch(Exception e) {		
+			return ResponseEntity.badRequest().body(new Response(400, false, "Insert item failed"));
+		}
+		
+		return ResponseEntity.ok().body(new Response(200, true, "Insert item successfully"));
 	}
 	
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)

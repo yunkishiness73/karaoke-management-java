@@ -57,6 +57,10 @@ public class InvoiceService {
 		return invoiceRepository.findAll(like(keyword));
 	}
 	
+	public List<Invoice> populateOptionsSearch(String keyword, String datepicker) {
+		return invoiceRepository.findAll(Specification.where(equalTo(datepicker)).and(like(keyword)));
+	}
+	
 	public Integer getServiceCharge(Set<DetailInvoice> set) {
 		if (set == null) return 0;
 		
