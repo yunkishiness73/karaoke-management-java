@@ -56,6 +56,15 @@ public class InvoiceSpecifications {
 		return null;
 	}
 	
+	public static Specification<Invoice> hasRoomId(Integer id) {
+		return (root, query, cb) -> { 
+			return cb.and(
+					cb.equal(root.get("room"), id),
+					cb.equal(root.get("isPaid"), false)
+			);
+		};
+	}
+	
 	public static Specification<Period> lessThanOrEqualTo(String date) {
 		try {
 			Date formatedDate = new SimpleDateFormat("yyyy-MM-dd").parse(date);
@@ -74,8 +83,8 @@ public class InvoiceSpecifications {
 		return (root, query, cb) -> { 
 			Join<Invoice, Room> roomJoin = root.join("room", JoinType.INNER);
 			Join<Invoice, User> userJoin = root.join("user", JoinType.INNER);
-			//return cb.like(root.get("totalPrice").as(String.class), "%"+ keyword +"%");
 	       return cb.or(
+	    		   cb.like(root.get("id").as(String.class), "%"+ keyword +"%"),
 	    		   cb.like(root.get("totalPrice").as(String.class), "%"+ keyword +"%"),
 	    		   cb.like(root.get("surcharge").as(String.class), "%"+ keyword +"%"),
 	    		   cb.like(root.get("checkOut").as(String.class), "%"+ keyword +"%"),

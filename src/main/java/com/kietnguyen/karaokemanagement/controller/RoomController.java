@@ -79,7 +79,7 @@ public class RoomController {
 		}
 		
 		if (roomService.booking(room)) {
-			return ResponseEntity.ok().body(new Response(400, true, "Booking successfully"));
+			return ResponseEntity.ok().body(new Response(200, true, "Booking successfully"));
 		}
 		
 		return ResponseEntity.badRequest().body(new Response(400, false, "Booking failed"));

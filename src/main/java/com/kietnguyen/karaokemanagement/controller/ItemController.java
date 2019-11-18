@@ -44,10 +44,10 @@ public class ItemController {
 		try {
 			itemRepository.save(item);
 		} catch(Exception e) {		
-			return ResponseEntity.badRequest().body(new Response(400, false, "Insert item failed"));
+			return ResponseEntity.badRequest().body(new Response(400, false, "Inserted item failed"));
 		}
 		
-		return ResponseEntity.ok().body(new Response(200, true, "Insert item successfully"));
+		return ResponseEntity.ok().body(new Response(200, true, "Inserted item successfully"));
 	}
 	
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
@@ -56,29 +56,32 @@ public class ItemController {
 	}
 	
 	@RequestMapping(value = "/{id}", method = RequestMethod.PUT)
-	public Item update(@RequestBody Item updateInfo, @PathVariable Integer id) {
+	public ResponseEntity<Response> update(@RequestBody Item updateInfo, @PathVariable Integer id) {
 		Item item = this.findById(id);
 		
-		if (item == null) return null;
+		if (item == null) 
+			return ResponseEntity.badRequest().body(new Response(400, false, "Resource not found"));;
 		
 		item.setName(updateInfo.getName());
 		item.setPrice(updateInfo.getPrice());
 		item.setUnit(updateInfo.getUnit());
 		item.setUpdatedDate(updateInfo.getUpdatedDate());
 		
-		itemRepository.save(item);
+		if (itemRepository.save(item) == null) 
+			return ResponseEntity.badRequest().body(new Response(400, false, "Updated item failed"));
 		
-		return item;
+		return ResponseEntity.ok().body(new Response(200, true, "Updated item successfully"));
 	}
 	
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
-	public String delete(@PathVariable Integer id) {
+	public ResponseEntity<Response> delete(@PathVariable Integer id) {
 		Item item = itemRepository.findItemById(id);
 		if (item != null) {
 			itemRepository.delete(item);
-			return null;
+			
+			return ResponseEntity.ok().body(new Response(200, true, "Deleted item successfully"));
 		}
 			
-		return null;
+		return ResponseEntity.badRequest().body(new Response(400, false, "Deleted item failed"));
 	}
 }

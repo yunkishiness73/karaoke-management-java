@@ -3,6 +3,8 @@ package com.kietnguyen.karaokemanagement.service;
 import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.equalTo;
 import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.hasTotalPrice;
 import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.like;
+import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.isPaid;
+import static com.kietnguyen.karaokemanagement.service.specification.InvoiceSpecifications.hasRoomId;
 
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -47,18 +49,21 @@ public class InvoiceService {
 	public static final String MONTH = "month";
 	public static final String YEAR = "year";
 	
+	public List<Invoice> findAll() {
+		return invoiceRepository.findAll(isPaid(true));
+	}
 	
 	public List<Invoice> search(String datepicker) {
-		return invoiceRepository.findAll(equalTo(datepicker));
+		return invoiceRepository.findAll(equalTo(datepicker).and(isPaid(true)));
 	}
 	
 	public List<Invoice> populateCriteriaSearch(String keyword) {
 		System.out.println(keyword);
-		return invoiceRepository.findAll(like(keyword));
+		return invoiceRepository.findAll(like(keyword).and(isPaid(true)));
 	}
 	
 	public List<Invoice> populateOptionsSearch(String keyword, String datepicker) {
-		return invoiceRepository.findAll(Specification.where(equalTo(datepicker)).and(like(keyword)));
+		return invoiceRepository.findAll(Specification.where(equalTo(datepicker)).and(like(keyword)).and(isPaid(true)));
 	}
 	
 	public Integer getServiceCharge(Set<DetailInvoice> set) {
@@ -91,6 +96,15 @@ public class InvoiceService {
 			default:
 				return null;
 		}
+	}
+	
+	public Invoice findInvoiceByRoomId(Integer roomId) {
+		List<Invoice> invoices = invoiceRepository.findAll(hasRoomId(roomId));
+	
+		if (invoices.size() == 0)
+			return null;
+		
+		return invoices.get(0);
 	}
 	
 	public boolean printBill(Invoice invoice, Integer charge) {

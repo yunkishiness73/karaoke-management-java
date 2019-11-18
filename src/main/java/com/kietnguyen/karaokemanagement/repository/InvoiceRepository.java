@@ -18,18 +18,21 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Integer>, JpaS
 	@Query(value="SELECT COUNT(*) AS quantity, SUM(total_price) AS totalPrice, DATE_FORMAT(check_in, '%Y-%m-%d') AS period FROM karaoke_management.invoice\r\n" + 
 			"WHERE CAST(check_in AS DATE) >= ?1 \r\n" + 
 			"AND CAST(check_in AS DATE) <= ?2 \r\n" + 
-			"GROUP BY DAY(check_in)", nativeQuery=true)
+			"AND is_paid = 1 \r\n" +
+			"GROUP BY DATE_FORMAT(check_in, '%Y-%m-%d') ORDER BY check_in ASC", nativeQuery=true)
 	List<Revenue> getRevenueByDay(String from, String to);
 	
 	@Query(value="SELECT COUNT(*) AS quantity, SUM(total_price) AS totalPrice, DATE_FORMAT(check_in, '%Y-%m') AS period FROM karaoke_management.invoice\r\n" + 
 			"WHERE CAST(check_in AS DATE) >= ?1 \r\n" + 
 			"AND CAST(check_in AS DATE) <= ?2 \r\n" + 
-			"GROUP BY MONTH(check_in)", nativeQuery=true)
+			"AND is_paid = 1 \r\n" +
+			"GROUP BY DATE_FORMAT(check_in, '%Y-%m') ORDER BY check_in ASC", nativeQuery=true)
 	List<Revenue> getRevenueByMonth(String from, String to);
 	
 	@Query(value="SELECT COUNT(*) AS quantity, SUM(total_price) AS totalPrice, DATE_FORMAT(check_in, '%Y') AS period FROM karaoke_management.invoice\r\n" + 
 			"WHERE CAST(check_in AS DATE) >= ?1 \r\n" + 
 			"AND CAST(check_in AS DATE) <= ?2 \r\n" + 
-			"GROUP BY YEAR(check_in)", nativeQuery=true)
+			"AND is_paid = 1 \r\n" +
+			"GROUP BY DATE_FORMAT(check_in, '%Y') ORDER BY check_in ASC", nativeQuery=true)
 	List<Revenue> getRevenueByYear(String from, String to);
 }

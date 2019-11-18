@@ -44,7 +44,12 @@ public class InvoiceController {
 		if (keyword.isPresent()) 
 			return invoiceService.populateCriteriaSearch(keyword.get());
 		
-		return invoiceRepository.findAll(); 
+		return invoiceService.findAll(); 
+	}
+	
+	@RequestMapping(value = "/findByRoomId/{id}", method = RequestMethod.GET)
+	public Invoice findInvoiceByRoomId(@PathVariable Integer id) {
+		return invoiceService.findInvoiceByRoomId(id);
 	}
 	
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
