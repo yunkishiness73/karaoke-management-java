@@ -1,5 +1,6 @@
 package com.kietnguyen.karaokemanagement.controller;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -75,13 +76,19 @@ public class ItemController {
 	
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
 	public ResponseEntity<Response> delete(@PathVariable Integer id) {
-		Item item = itemRepository.findItemById(id);
-		if (item != null) {
+		String errorMessage = "";
+		try {
+			Item item = itemRepository.findItemById(id);
+			if (item == null) 
+				return ResponseEntity.badRequest().body(new Response(400, false, "Resource not found"));
+			
 			itemRepository.delete(item);
-			
 			return ResponseEntity.ok().body(new Response(200, true, "Deleted item successfully"));
-		}
 			
-		return ResponseEntity.badRequest().body(new Response(400, false, "Deleted item failed"));
+		} catch(Exception  e) {
+			errorMessage = e.getMessage();
+		}
+		
+		return ResponseEntity.badRequest().body(new Response(400, false, errorMessage));
 	}
 }

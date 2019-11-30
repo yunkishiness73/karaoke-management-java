@@ -47,8 +47,8 @@ public class DetailInvoice {
 	private Integer price;
 
 	@Column(name="created_date", nullable=true, columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm", iso = ISO.DATE_TIME)
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss", iso = ISO.DATE_TIME)
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
 	private LocalDateTime createdDate;
 	
 	@Column(name="updated_date", nullable=true, columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")

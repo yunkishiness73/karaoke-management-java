@@ -34,6 +34,9 @@ public class Invoice {
 	@Column(name="surcharge", nullable=true, columnDefinition="integer default 0")
 	private Integer surcharge;
 	
+	@Column(name="room_fee", nullable=true, columnDefinition="integer default 0")
+	private Integer roomFee;
+	
 	@Column(name="total_price", nullable=true)
 	private Integer totalPrice;
 	
@@ -105,6 +108,14 @@ public class Invoice {
 
 	public User getUser() {
 		return user;
+	}
+
+	public Integer getRoomFee() {
+		return roomFee;
+	}
+
+	public void setRoomFee(Integer roomFee) {
+		this.roomFee = roomFee;
 	}
 
 	public void setUser(User user) {

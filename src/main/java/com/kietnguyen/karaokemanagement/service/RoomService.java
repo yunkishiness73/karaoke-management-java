@@ -82,6 +82,7 @@ public class RoomService {
 	public Invoice pay(Room room, Integer surcharge) {
 		Integer roomId = room.getId();
 		List<Invoice> invoices = invoiceRepository.findAll(Specification.where(belongToRoom(roomId).and(isPaid(false))));
+		User currentUser = userService.currentUser(SecurityContextHolder.getContext().getAuthentication());
 		System.out.println("Room has [ " + invoices.size() + "] invoices");
 		if (invoices.size() == 1) {
 			LocalDateTime checkOutTime = DateTimeUtil.getInstance().getCurrentDateTime();
@@ -119,6 +120,8 @@ public class RoomService {
 		
 			invoice.setSurcharge(surcharge);
 			invoice.setTotalPrice(totalPrice);
+			invoice.setRoomFee(totalPrice - serviceCharge);
+			invoice.setUser(currentUser);
 			
 			invoiceRepository.save(invoice);
 			
@@ -138,6 +141,7 @@ public class RoomService {
 			System.out.println("Total " + totalPrice);
 //			System.out.println("Service charge: " +invoiceService.getServiceCharge(null));
 		}
+		
 		return invoices.get(0);	
 	}
 	

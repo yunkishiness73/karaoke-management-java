@@ -97,10 +97,10 @@ public class RoomController {
 		return null;
 	}
 	
-	@RequestMapping(value = "/checkOut/{id}", method = RequestMethod.POST)
-	public ResponseEntity<Response> checkOut(@RequestBody Invoice checkOutInfo, @PathVariable Integer id) {
+	@RequestMapping(value = "/checkOut/{id}", method = RequestMethod.GET)
+	public ResponseEntity<Response> checkOut(@RequestParam Optional<Integer> surCharge, @PathVariable Integer id) {
 		Room room = roomRepository.findRoomById(id);
-		Integer surcharge = checkOutInfo.getSurcharge() > 0 ? checkOutInfo.getSurcharge() : 0;
+		Integer surcharge = surCharge.isPresent() ? ( surCharge.get() > 0 ? surCharge.get() : 0 ) : 0;
 
 		if (room == null)
 			return ResponseEntity.badRequest().body(new Response(400, false, "Resource is not existed"));
@@ -113,7 +113,7 @@ public class RoomController {
 		Invoice invoice = roomService.pay(room, surcharge);
 		
 		if (invoice != null) {
-			return ResponseEntity.ok().body(new Response(200, true, "Pay successfully"));
+			return ResponseEntity.ok().body(new Response(200, true, invoice));
 		}
 		
 		return ResponseEntity.badRequest().body(new Response(400, false, "Pay failed"));
