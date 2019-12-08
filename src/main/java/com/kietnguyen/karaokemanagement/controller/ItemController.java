@@ -86,7 +86,7 @@ public class ItemController {
 			return ResponseEntity.ok().body(new Response(200, true, "Deleted item successfully"));
 			
 		} catch(Exception  e) {
-			errorMessage = e.getMessage();
+			errorMessage = "Can't delete because this item associated with invoice";
 		}
 		
 		return ResponseEntity.badRequest().body(new Response(400, false, errorMessage));

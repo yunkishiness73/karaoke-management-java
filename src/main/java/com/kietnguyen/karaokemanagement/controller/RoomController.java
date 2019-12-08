@@ -109,7 +109,6 @@ public class RoomController {
 			return ResponseEntity.badRequest().body(new Response(400, false, "This room is not booking"));
 		
 		System.out.println("Integer surcharge " +surcharge);
-		
 		Invoice invoice = roomService.pay(room, surcharge);
 		
 		if (invoice != null) {

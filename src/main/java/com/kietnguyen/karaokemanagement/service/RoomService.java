@@ -69,6 +69,9 @@ public class RoomService {
 			invoice.setRoom(room);
 			invoice.setIsPaid(false);
 			invoice.setUser(currentUser);
+			invoice.setRoomFee(0);
+			invoice.setSurcharge(0);
+			invoice.setTotalPrice(0);
 			
 			roomRepository.save(room);
 			invoiceRepository.save(invoice);
@@ -91,41 +94,63 @@ public class RoomService {
 			//Now, this 2 objects have pointed to the same address
 			invoice = invoices.get(0);
 			
-			Date d1 = DateTimeUtil.getInstance().LocalDateTime2Date(invoice.getCheckIn());
-			Date d2 = null;
-			
-			if (invoice.getCheckOut() == null) {
-				d2 = DateTimeUtil.getInstance().LocalDateTime2Date(checkOutTime);
-				
-				invoice.setCheckOut(checkOutTime);
-			} else {
-				d2 = DateTimeUtil.getInstance().LocalDateTime2Date(invoice.getCheckOut());
-			}
-			
-			
-			double hours = DateTimeUtil.getInstance().getHoursBetween2Days(d1, d2);
-			
-			List<Period> periods = periodRepository.findAll(Specification.where(
-					lessThanOrEqualTo(new SimpleDateFormat("HH:mm:ss").format(d1)))
-					.and(greaterThan(new SimpleDateFormat("HH:mm:ss").format(d1))));
-			
-			System.out.println("Period");
-			System.out.println(periods.get(0).getName());
-			System.out.println(periods.get(0).getBaseRate());
-			
 			int totalPrice = 0;
-			int basePrice = room.getRoomType().getEvent().getBasePrice();
-			double baseRate = room.getRoomType().getBaseRate();
-			double baseRate_Ped = periods.get(0).getBaseRate();
 			int serviceCharge = invoiceService.getServiceCharge(invoice.getDetailInvoices());
-			double rounded_hours = Math.round(hours * 10)/10.0;
+			int basePrice, roomFee = 0;
+			double baseRate = 0, baseRate_Ped = 0, rounded_hours = 0;
+			Date d1 = null, d2 = null;
+			List<Period> periods = null;
 			
+			if (invoice.getTotalPrice() == null || invoice.getTotalPrice() == 0) {
+				System.out.println("Calculate");
+				d1 = DateTimeUtil.getInstance().LocalDateTime2Date(invoice.getCheckIn());
+				
+				if (invoice.getCheckOut() == null) {
+					d2 = DateTimeUtil.getInstance().LocalDateTime2Date(checkOutTime);
+					
+					invoice.setCheckOut(checkOutTime);
+				} else {
+					d2 = DateTimeUtil.getInstance().LocalDateTime2Date(invoice.getCheckOut());
+				}
+				
+				
+				double hours = DateTimeUtil.getInstance().getHoursBetween2Days(d1, d2);
+				
+				periods = periodRepository.findAll(Specification.where(
+						lessThanOrEqualTo(new SimpleDateFormat("HH:mm:ss").format(d1)))
+						.and(greaterThan(new SimpleDateFormat("HH:mm:ss").format(d1))));
+				
+				System.out.println("Period");
+				System.out.println(periods.get(0).getName());
+				System.out.println(periods.get(0).getBaseRate());
+				
+				basePrice = room.getRoomType().getEvent().getBasePrice();
+				baseRate = room.getRoomType().getBaseRate();
+				baseRate_Ped = periods.get(0).getBaseRate();
+				rounded_hours = Math.round(hours * 10)/10.0;
+				roomFee = (int) ( rounded_hours * basePrice * baseRate * baseRate_Ped );
+				totalPrice += roomFee + serviceCharge + surcharge;
+				
+			} else {
+				System.out.println("Recalculate");
+				roomFee = invoice.getRoomFee();
+				System.out.println("surCharge" +invoice.getSurcharge());
+				System.out.println("serviceCharge" +serviceCharge);
+				System.out.println("roomFee" +roomFee);
+				System.out.println("FreeTotal " +( serviceCharge + surcharge + roomFee ));
+				totalPrice = ( serviceCharge + surcharge + roomFee );
+				System.out.println("total " +totalPrice);
+				System.out.println("======");
+			}
+			System.out.println("======OUT======");
+			System.out.println("surCharge" +invoice.getSurcharge());
+			System.out.println("serviceCharge" +serviceCharge);
+			System.out.println("roomFee" +roomFee);
+			System.out.println("total " +totalPrice);
 			
-			totalPrice += ( rounded_hours * basePrice * baseRate * baseRate_Ped ) + serviceCharge + surcharge;
-		
 			invoice.setSurcharge(surcharge);
 			invoice.setTotalPrice(totalPrice);
-			invoice.setRoomFee(totalPrice - serviceCharge);
+			invoice.setRoomFee(roomFee);
 			invoice.setUser(currentUser);
 			
 			invoiceRepository.save(invoice);
@@ -143,7 +168,7 @@ public class RoomService {
 //			System.out.println("checkOut: "+ new SimpleDateFormat("HH:mm:ss").format(d2) instanceof String);
 //			System.out.println("checkIn: "+ new SimpleDateFormat("HH:mm:ss").format(d1) instanceof String);
 			
-			System.out.println("Period has [ " + periods.size() + " ]");
+			//System.out.println("Period has [ " + periods.size() + " ]");
 			System.out.println("Total " + totalPrice);
 //			System.out.println("Service charge: " +invoiceService.getServiceCharge(null));
 		}
