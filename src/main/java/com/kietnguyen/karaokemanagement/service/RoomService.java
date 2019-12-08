@@ -102,12 +102,16 @@ public class RoomService {
 				d2 = DateTimeUtil.getInstance().LocalDateTime2Date(invoice.getCheckOut());
 			}
 			
+			
 			double hours = DateTimeUtil.getInstance().getHoursBetween2Days(d1, d2);
 			
 			List<Period> periods = periodRepository.findAll(Specification.where(
 					lessThanOrEqualTo(new SimpleDateFormat("HH:mm:ss").format(d1)))
 					.and(greaterThan(new SimpleDateFormat("HH:mm:ss").format(d1))));
-			System.out.println(periods.size());
+			
+			System.out.println("Period");
+			System.out.println(periods.get(0).getName());
+			System.out.println(periods.get(0).getBaseRate());
 			
 			int totalPrice = 0;
 			int basePrice = room.getRoomType().getEvent().getBasePrice();
@@ -115,6 +119,7 @@ public class RoomService {
 			double baseRate_Ped = periods.get(0).getBaseRate();
 			int serviceCharge = invoiceService.getServiceCharge(invoice.getDetailInvoices());
 			double rounded_hours = Math.round(hours * 10)/10.0;
+			
 			
 			totalPrice += ( rounded_hours * basePrice * baseRate * baseRate_Ped ) + serviceCharge + surcharge;
 		
@@ -127,6 +132,7 @@ public class RoomService {
 			
 //			invoiceService.printBill(invoice, 0);
 			
+			System.out.println("[ " + d1 + " -> " +d2 + " ]");
 			System.out.println("surcharge: " +surcharge);
 			System.out.println("Hours: "+ rounded_hours);
 //			System.out.println("Minutes: "+ ((seconds % 3600)/60));
